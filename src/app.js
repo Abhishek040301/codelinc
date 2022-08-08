@@ -431,26 +431,24 @@ router.post('/transportationForm/saveTransportationRequest/', (req, res) => {
   //const veteran_id= null,
   const requestObj = [
 	
-    //req.body.veteran_id,
-     4,
+    req.body.veteran_id,
     req.body.appointmentDate,
     req.body.time,
     req.body.reason,
     req.body.destinationAddress,
-	req.body.destinationAddress2,	
+	  req.body.destinationAddress2,	
     req.body.city,
     req.body.selectedState,
     req.body.zipcode,
     req.body.dateRequested 
   ]
-  console.log("FormData ",req.body)
+  console.log("FormData:",req.body)
 
   pool
   .query(QUERIES.TransportationRequest.SaveTransportationDetails, requestObj)
   .then(resp => {
     console.log('success on endpoint SaveTransportationDetails')
-	
-	res.status(200).json({status:true,result:"Successfully saved transportation request" })
+	  res.status(200).json({vetID:req.body.veteran_id, status:true,result:"Successfully saved transportation request" })
 
     //res.json({vetID:req.body.veteran_id, result: 'Successfully saved transportation request'})
   })
@@ -462,37 +460,30 @@ router.post('/transportationForm/saveTransportationRequest/', (req, res) => {
 
 // Endpoint 17
 router.get('/transportationForm/getTransportationRequests/', (req, res) => {
-  //const veteran = req.params.veteranId
-
   pool
   .query(QUERIES.TransportationRequest.GetTransportationRequests)
-   //.query(QUERIES.TransportationRequest.GetTransportationRequests, [veteran])
   .then(resp => {
     console.log('success on endpoint GetTransportationRequests')
-	//res.json({veteranId: veteran, result: resp.rows})
-     // res.json({result:resp.rows})
+     //res.json({result:resp.rows})
 	  res.json(resp.rows)
-	 
-
   })
   .catch(err => {
     console.error('Error exectuting query', err.stack)
     res.status(501).json({err})
   })
-
-  
 })
 
 // Endpoint 18
 router.post('/transportationForm/approveTransportationRequests', (req, res) => {
 
   const requestObj = [
+    //req.body.veteran_id,
     req.body.request_id,
     req.body.coordinator,
     req.body.nursing_notified,
     req.body.notified_by,
     req.body.approved_date,
-	req.body.date
+	  req.body.date
   ]
   
 console.log("FormData ",req.body)
@@ -504,7 +495,10 @@ console.log("FormData ",req.body)
     //res.json('Successfully approved transportation request')
 	res.status(200).json({status:true,result:"Successfully approved transportation request" })
   })
-  .catch(err => console.error('Error executing query', err.stack))
+  .catch(err => {
+    console.error('Error exectuting query', err.stack)
+    res.status(501).json({err})
+  })
 }) 
 
 
