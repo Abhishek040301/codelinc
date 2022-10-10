@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 const secrets = require('../secret');
 
 const { Pool } = require('pg');
@@ -6,12 +5,12 @@ const { QUERIES } = require('../constants');
 const pool = new Pool({
   host: secrets.HOST,
   user: secrets.USER,
-  password: secrets.PASSWORD,
+  password: secrets.DBENTRY,
   database: secrets.DATABASE,
   port: secrets.PORT
 });
 
-LeaglHist = (legal) => {
+const LeaglHist = (legal) => {
   return new Promise((resolve, reject) => {
     pool.query(
       QUERIES.InitialAssessment.page4legal,
@@ -26,7 +25,7 @@ LeaglHist = (legal) => {
   });
 };
 
-SubstanceAbuse = (subAbu) => {
+const SubstanceAbuse = (subAbu) => {
   return new Promise((resolve, reject) => {
     pool.query(
       QUERIES.InitialAssessment.page4SubAbu, subAbu,

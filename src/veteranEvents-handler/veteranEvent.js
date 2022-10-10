@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 const secrets = require('../secret');
 
 const { Pool } = require('pg');
@@ -6,12 +5,12 @@ const { QUERIES } = require('../constants');
 const pool = new Pool({
   host: secrets.HOST,
   user: secrets.USER,
-  password: secrets.PASSWORD,
+  password: secrets.DBENTRY,
   database: secrets.DATABASE,
   port: secrets.PORT
 });
 
-queryPromise1 = (veteranId) => {
+const queryPromise1 = (veteranId) => {
   return new Promise((resolve, reject) => {
     pool.query(
       QUERIES.calendarAPis.getCurrentVeteranEmailId,
@@ -26,7 +25,7 @@ queryPromise1 = (veteranId) => {
   });
 };
 
-queryPromise2 = (emailId) => {
+const queryPromise2 = (emailId) => {
   return new Promise((resolve, reject) => {
     pool.query(
       QUERIES.calendarAPis.getCalendarEventsForVeteran,

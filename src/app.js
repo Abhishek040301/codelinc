@@ -1,19 +1,16 @@
-/* eslint-disable no-unused-vars */
-// const path = require('path')
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const compression = require('compression');
-// const { getCurrentInvoke } = require('@vendia/serverless-express')
 const ejs = require('ejs').__express;
 const app = express();
 const router = express.Router();
 const multer = require('multer');
 const profileImage = require('./imageUploadService/uploadImage.js');
 
-// const constants = require('./constants')
 const sequentialQueries = require('./assessment-handler/assessment.js');
 const saveTreatmentPlan = require('./treatmentPlan-handler/treatmentIssue.js');
+const updateTreatmentPlan = require('./treatmentPlan-handler/updateTreatment.js');
 const veteranEventsQueries = require('./veteranEvents-handler/veteranEvent.js');
 const iaFormsQueries = require('./initialAssessmentFormsHandler/iaForm.js');
 const iaFormsQueriesp2 = require('./initialAssessmentFormsHandler/iaFormP2');
@@ -27,7 +24,7 @@ const { QUERIES } = require('./constants');
 const pool = new Pool({
   host: secrets.HOST,
   user: secrets.USER,
-  password: secrets.PASSWORD,
+  password: secrets.DBENTRY,
   database: secrets.DATABASE,
   port: secrets.PORT
 });
@@ -665,16 +662,16 @@ router.get('/residentSearch/getTreatmentPlanDetails/:veteran_id', (req, res) => 
 
 // Endpoint 15.5
 // Case-Worker UpdateTreatmentPlan
-router.put('/updateTreatmentPlanDetails/save/:veteran_id', (req, res) => {
-  const requestObj = [
-    req.params.veteran_id,
+router.put('/updateTreatmentPlanDetails/save/:veteran_id', async (req, res) => {
+  const vet = req.params.veteran_id;
+  const initialTreatmentObj = [
+    vet,
     req.body.veteranDiagnosis,
     req.body.veteranSupports,
     req.body.veteranStrengths,
     req.body.veteranNotes
   ];
-  pool
-    .query(QUERIES.TreatmentPlan.UpdateTreatmentPlanDetails, requestObj)
+  await updateTreatmentPlan(initialTreatmentObj, req)
     .then(resp => {
       res.status(200).json({ responseStatus: 'SUCCESS', data: 'Updated Successfully', error: false });
       console.log('Successfully updated treatmentPlanDetails');
@@ -784,7 +781,7 @@ router.post(
   '/healthTracker/updateHealthTracker/:veteranId',
   async (req, res) => {
     const trackerReq = req.body;
-    const healthTrackerResponse = await healthTrackerQueries(trackerReq[0], trackerReq[1], req.params.veteranId)
+    await healthTrackerQueries(trackerReq[0], trackerReq[1], req.params.veteranId)
       .then((response) => {
         res.status(200).json({ responseStatus: 'SUCCESS', data: response, error: false });
       }).catch((err) => {
@@ -814,7 +811,7 @@ router.post('/addUser', (req, res) => {
   const requestObject = [
     req.body.userName,
     req.body.userGroup,
-    'Lincon#123', // password
+    'Lincon#123',
     req.body.partyId
   ];
   pool.query(QUERIES.UiLayout.addUser, requestObject)
@@ -885,23 +882,20 @@ router.post('/addCaseWorker', (req, res) => {
 const upload = multer({
   limits: 1024 * 5,
   fileFilter: function (req, file, done) {
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/jpg') {
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
       done(null, true);
     } else {
-      done(new Error('Wrong file type, only upload JPEG and/or PNG !'),
+      done(new Error('Wrong file type, only file type JPEG, JPG and PNG are allowed'),
         false);
     }
   }
 });
 
 // upload Veteran image end point
-router.post('/uploadImage/:loginId', upload.array('image'), async (req, res) => {
+router.post('/uploadImage/:loginId', upload.array('image'), (req, res) => {
   const imageFile = req.files[0];
   const imageName = req.body.imageName;
   const userGroup = req.body.userGroup;
-  console.log('imageName', imageName);
-  console.log('userGroup', userGroup);
-  console.log('imageFile', imageFile);
   const requestObj = [
     req.params.loginId,
     imageName
@@ -935,15 +929,14 @@ router.post('/uploadImage/:loginId', upload.array('image'), async (req, res) => 
 });
 
 // get image end point
-router.get('/profileImage/:imageName', async (req, res) => {
+router.get('/profileImage/:imageName', (req, res) => {
   profileImage.getImageFromS3(req.params.imageName).then((response) => {
     res.status(200).json({ responseStatus: 'SUCCESS', data: response.Body.toString('base64'), error: false });
   }).catch((err) => {
     console.log(err);
     res.status(501).json({ responseStatus: 'FAILURE', data: null, error: err });
   });
-}
-);
+});
 
 // get api for ia page 1
 router.get('/initialAssessment/page-1/:veteranId', (req, res) => {
