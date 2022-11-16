@@ -1,13 +1,43 @@
-const secrets = require('../secret');
 const { Pool } = require('pg');
 const { QUERIES } = require('../constants');
-const pool = new Pool({
-  host: secrets.HOST,
-  user: secrets.USER,
-  password: secrets.DBENTRY,
-  database: secrets.DATABASE,
-  port: secrets.PORT
+
+const AWS = require('aws-sdk');
+const region = 'us-east-1';
+var dbCredential = {};
+
+const client = new AWS.SecretsManager({
+  region
 });
+
+getCredential();
+
+function getCredential() {
+    client.getSecretValue({ SecretId: 'dev/postgres/codelinc/db' }, function (err, data) {
+    if (err) {
+      console.log("ERROR")
+      console.log(err)
+      if (err.code === 'DecryptionFailureException') { throw err; } else if (err.code === 'InternalServiceErrorException') { throw err; } else if (err.code === 'InvalidParameterException') { throw err; } else if (err.code === 'InvalidRequestException') { throw err; } else if (err.code === 'ResourceNotFoundException') { throw err; }
+    } else {
+      console.log("SUCCESS")
+      if ('SecretString' in data) {
+        let secret = data.SecretString;
+        dbCredential = JSON.parse(secret);
+        dbConnection();
+      }
+    }
+  });
+}
+
+let pool;
+function dbConnection() {
+  pool = new Pool({
+    host: dbCredential.host,
+    user: dbCredential.username,
+    password: dbCredential.password,
+    database: dbCredential.dbname,
+    port: dbCredential.port
+  });
+}
 
 const updateTreatment = async (req) => {
   const vet = req.params.veteran_id;
